@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	<meta charset="UTF-8">
+	<meta http-equiv="content-type" content="text/html; charset=utf-8">
+	<title>数独游戏(自动推算)</title>
+	<script type="text/javascript" src="jquery.min.js"></script>
+	<script type="text/javascript">
+	$(document).bind("contextmenu",function(){return false;}); // 禁用右键
+	$(document).bind("selectstart",function(){return false;}); // 禁用文本选择
+	</script>
+	<style type="text/css">
+		* {cursor:default;}
+		table {border:#333 solid;border-width:2px 0 0 2px;margin:0px auto;}
+		td {width:50px;height:50px;border:1px #999 solid;border-width:0 1px 1px 0;vertical-align:middle;text-align:center;font-size:25px;cursor:pointer;}
+		td.right {border-right:2px #333 solid;}
+		.bottom td {border-bottom:2px #333 solid;}
+		td.default {background:#ccc;}
+		td.default, td.value {cursor:default;}
+		td.setable {background:#f60;}
+		
+		.select-box {margin-top:10px;display:none;}
+		.btns {margin-top:10px;text-align:center;}
+		button {margin:0 5px;padding:5px 10px;border:1px #999 solid;background:#ccc;border-radius:5px;font-size:16px;cursor:pointer;}
+		.clean-block, .begin-game {display:none;}
+		.disabled {color:#999;cursor:default;}
+	</style>
+</head>
+<body>
+	<table class="box" border="0" cellpadding="0" cellspacing="0">
+		<tr>
+			<td></td>
+			<td></td>
+			<td class="right"></td>
+			<td></td>
+			<td></td>
+			<td class="right"></td>
+			<td></td>
+			<td></td>
+			<td class="right"></td>
+		</tr>
+		<tr>
+			<td></td>
+			<td></td>
+			<td class="right"></td>
+			<td></td>
+			<td></td>
+			<td class="right"></td>
+			<td></td>
+			<td></td>
+			<td class="right"></td>
+		</tr>
+		<tr class="bottom">
+			<td></td>
+			<td></td>
+			<td class="right"></td>
+			<td></td>
+			<td></td>
+			<td class="right"></td>
+			<td></td>
+			<td></td>
+			<td class="right"></td>
+		</tr>
+		<tr>
+			<td></td>
+			<td></td>
+			<td class="right"></td>
+			<td></td>
+			<td></td>
+			<td class="right"></td>
+			<td></td>
+			<td></td>
+			<td class="right"></td>
+		</tr>
+		<tr>
+			<td></td>
+			<td></td>
+			<td class="right"></td>
+			<td></td>
+			<td></td>
+			<td class="right"></td>
+			<td></td>
+			<td></td>
+			<td class="right"></td>
+		</tr>
+		<tr class="bottom">
+			<td></td>
+			<td></td>
+			<td class="right"></td>
+			<td></td>
+			<td></td>
+			<td class="right"></td>
+			<td></td>
+			<td></td>
+			<td class="right"></td>
+		</tr>
+		<tr>
+			<td></td>
+			<td></td>
+			<td class="right"></td>
+			<td></td>
+			<td></td>
+			<td class="right"></td>
+			<td></td>
+			<td></td>
+			<td class="right"></td>
+		</tr>
+		<tr>
+			<td></td>
+			<td></td>
+			<td class="right"></td>
+			<td></td>
+			<td></td>
+			<td class="right"></td>
+			<td></td>
+			<td></td>
+			<td class="right"></td>
+		</tr>
+		<tr class="bottom">
+			<td></td>
+			<td></td>
+			<td class="right"></td>
+			<td></td>
+			<td></td>
+			<td class="right"></td>
+			<td></td>
+			<td></td>
+			<td class="right"></td>
+		</tr>
+	</table>
+	<table class="select-box" border="0" cellpadding="0" cellspacing="0">
+		<tr>
+			<td>1</td>
+			<td>2</td>
+			<td class="right">3</td>
+		</tr>
+		<tr>
+			<td>4</td>
+			<td>5</td>
+			<td class="right">6</td>
+		</tr>
+		<tr class="bottom">
+			<td>7</td>
+			<td>8</td>
+			<td class="right">9</td>
+		</tr>
+	</table>
+	<div class="btns"><button class="new-game">新迷题</button><button class="clean-block">清除</button><button class="begin-game">开始推导</button></div>
+	<script type="text/javascript">
+		var vals = [
+			[0,0,9, 0,0,2, 7,8,0],
+			[0,0,0, 0,3,8, 0,0,0],
+			[0,0,8, 4,7,0, 0,0,0],
+			
+			[1,0,0, 0,0,0, 5,0,9],
+			[0,8,0, 0,1,0, 2,0,0],
+			[9,0,0, 0,0,0, 6,0,8],
+			
+			[0,0,5, 2,8,0, 0,0,0],
+			[0,0,0, 0,9,6, 0,0,0],
+			[0,0,3, 0,0,7, 9,4,0]
+		];
+		var tdElems = $('.box td');
+		var elems = $('table.box tr').map(function() {
+			return $(this).children();
+		});
+		var selectTdElems = $('.select-box td');
+		
+		var ys, xs, gs;
+		var y, x;
+		var setableElems = $([]);
+		var nvals;
+		
+		function initVars() {
+			ys = [[],[],[],[],[],[],[],[],[]];
+			xs = [[],[],[],[],[],[],[],[],[]];
+			gs = [
+				[[], [], []],
+				[[], [], []],
+				[[], [], []]
+			];
+		}
+		
+		function initElems() {
+			initVars();
+			
+			for(y=0; y<9; y++) {
+				for(x=0; x<9; x++) {
+					elems[y].eq(x).data('p', {x:x, y:y}).attr('title', '(' + [x+1,y+1].join(',') + ')');
+					if(vals[y][x]) {
+						elems[y].eq(x).addClass('default').text(vals[y][x]);
+					
+						ys[y].push(vals[y][x]);
+						xs[x].push(vals[y][x]);
+						gs[Math.floor(y/3)][Math.floor(x/3)].push(vals[y][x]);
+					}
+				}
+			}
+
+		}
+		
+		function makeSetableElem() {
+			var n, ns, vs;
+			
+			nvals = [];
+			
+			for(y=0; y<9; y++) {
+				vs = [];
+				nvals.push(vs);
+				for(x=0; x<9; x++) {
+					ns = [];
+					vs.push(ns);
+				
+					var title = '(' + [x+1,y+1].join(',') + ')';
+					if(vals[y][x]) {
+						elems[y].eq(x).attr('title', title);
+					} else {
+						for(n=1; n<=9; n++) {
+							if(ys[y].indexOf(n) == -1 && xs[x].indexOf(n) == -1 && gs[Math.floor(y/3)][Math.floor(x/3)].indexOf(n) == -1) {
+								ns.push(n);
+							}
+						}
+						if(ns.length == 1) {
+							setableElems = setableElems.add(elems[y].eq(x).data('n', ns[0]));
+						}
+						elems[y].eq(x).attr('title', title + ' = [' + ns.join(',') + ']');
+					}
+				}
+			}
+			
+			setableElems.click(function() {
+				var $p = $(this).data('p');
+				var $n = $(this).data('n');
+				
+				vals[$p.y][$p.x] = $n;
+				
+				ys[$p.y].push($n);
+				xs[$p.x].push($n);
+				gs[Math.floor($p.y/3)][Math.floor($p.x/3)].push($n);
+				
+				$(this).removeData('n').addClass('value').text($n);
+				
+				setableElems.removeClass('setable').unbind('click');
+				
+				setableElems = $([]);
+				makeSetableElem();
+			});
+		}
+		
+		initElems();
+		makeSetableElem();
+		
+		$('.new-game').click(function() {
+			$(this).hide();
+			$('.begin-game').show();
+			
+			setableElems = $([]);
+			
+			for(y=0; y<9; y++) {
+				for(x=0; x<9; x++) {
+					vals[y][x] = 0;
+					elems[y].eq(x).removeClass('default value setable');
+				}
+			}
+			
+			tdElems.text('').unbind('click').click(function() {
+				tdElems.removeClass('setable');
+				$(this).addClass('setable');
+				$('.select-box, .clean-block').show();
+				
+				var $p = $(this).data('p');
+				selectTdElems.each(function() {
+					var $n = parseInt($(this).text());
+					
+					if(ys[$p.y].indexOf($n) != -1 || xs[$p.x].indexOf($n) != -1 || gs[Math.floor($p.y/3)][Math.floor($p.x/3)].indexOf($n) != -1) {
+						$(this).addClass('disabled');
+					} else {
+						$(this).removeClass('disabled');
+					}
+				});
+			});
+			
+			initVars();
+		});
+		
+		$('.clean-block').click(function() {
+			var $p = tdElems.filter('.setable').text('').data('p');
+			var $n = vals[$p.y][$p.x];
+			
+			$.each([ys[$p.y], xs[$p.x], gs[Math.floor($p.y/3)][Math.floor($p.x/3)]], function() {
+				i = this.indexOf($n);
+				if(i != -1) {
+					this.splice(i, 1);
+				}
+			});
+			
+			vals[$p.y][$p.x] = 0;
+		});
+		
+		selectTdElems.click(function() {
+			if($(this).is('.disabled')) {
+				return;
+			}
+			
+			var n = parseInt($(this).text());
+			var $p = tdElems.filter('.setable').text(n).data('p');
+			var $n = vals[$p.y][$p.x];
+			var i;
+			
+			$.each([ys[$p.y], xs[$p.x], gs[Math.floor($p.y/3)][Math.floor($p.x/3)]], function() {
+				i = this.indexOf($n);
+				if(i == -1) {
+					this.push(n);
+				} else {
+					this[i] = n;
+				}
+			});
+			
+			vals[$p.y][$p.x] = n;
+		});
+		
+		$('.begin-game').click(function() {
+			$(this).hide();
+			$('.select-box, .clean-block').hide();
+			$('.new-game').show();
+			tdElems.text('').unbind('click').removeClass('setable');
+			initElems();
+			makeSetableElem();
+		});
+		
+		setInterval(function() {
+			setableElems.toggleClass('setable');
+		}, 500);
+	</script>
+</body>
+</html>
