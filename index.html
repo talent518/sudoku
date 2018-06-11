@@ -4,6 +4,7 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 	<meta charset="UTF-8">
 	<meta http-equiv="content-type" content="text/html; charset=utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>数独游戏(自动推算)</title>
 	<script type="text/javascript" src="jquery.min.js"></script>
 	<script type="text/javascript">
@@ -13,7 +14,7 @@
 	<style type="text/css">
 		* {cursor:default;}
 		table {border:#333 solid;border-width:2px 0 0 2px;margin:0px auto;}
-		td {width:50px;height:50px;border:1px #999 solid;border-width:0 1px 1px 0;vertical-align:middle;text-align:center;font-size:25px;cursor:pointer;}
+		td {width:40px;height:40px;border:1px #999 solid;border-width:0 1px 1px 0;vertical-align:middle;text-align:center;font-size:25px;cursor:pointer;}
 		td.right {border-right:2px #333 solid;}
 		.bottom td {border-bottom:2px #333 solid;}
 		td.default {background:#ccc;}
@@ -23,6 +24,7 @@
 		.select-box {margin-top:10px;display:none;}
 		.btns {margin-top:10px;text-align:center;}
 		button {margin:0 5px;padding:5px 10px;border:1px #999 solid;background:#ccc;border-radius:5px;font-size:16px;cursor:pointer;}
+		button:focus, button:hover {outline:none;border-color:#245580;background-color:#337ab7;color:white;}
 		.clean-block, .begin-game {display:none;}
 		.disabled {color:#999;cursor:default;}
 	</style>
@@ -248,12 +250,6 @@
 					}
 				}
 			}
-
-			if(setableElems.size()) {
-				$('.hint-block').show();
-			} else {
-				$('.hint-block').hide();
-			}
 		}
 		
 		initElems();
@@ -261,7 +257,7 @@
 		
 		$('.new-game').click(function() {
 			$(this).hide();
-			$('.hint-block').hide();
+			$('.select-box, .clean-block, .hint-block').hide();
 			$('.begin-game').show();
 			
 			setableElems = $([]);
@@ -334,7 +330,7 @@
 		$('.begin-game').click(function() {
 			$(this).hide();
 			$('.select-box, .clean-block').hide();
-			$('.new-game').show();
+			$('.new-game, .hint-block').show();
 			tdElems.text('').unbind('click').removeClass('setable');
 			initElems();
 			makeSetableElem();
@@ -342,6 +338,7 @@
 
 		$('.hint-block').click(function() {
 			ntip = 0;
+			makeSetableElem();
 		});
 		
 		setInterval(function() {
