@@ -203,7 +203,7 @@
 
 			tdElems.filter(':not(.default)').unbind('click').click(function() {
 				activeElem = $(this);
-				hint = 6;
+				ntip = 6;
 
 				tdElems.removeClass('setable');
 				$(this).addClass('setable');
@@ -226,7 +226,8 @@
 			var n, ns, vs;
 			
 			nvals = [];
-			
+			setableElems = $([]);
+
 			for(y=0; y<9; y++) {
 				vs = [];
 				nvals.push(vs);
@@ -253,7 +254,6 @@
 		}
 		
 		initElems();
-		makeSetableElem();
 		
 		$('.new-game').click(function() {
 			$(this).hide();
@@ -333,10 +333,11 @@
 			$('.new-game, .hint-block').show();
 			tdElems.text('').unbind('click').removeClass('setable');
 			initElems();
-			makeSetableElem();
 		});
 
 		$('.hint-block').click(function() {
+			$('.select-box, .clean-block').hide();
+			tdElems.removeClass('setable');
 			ntip = 0;
 			makeSetableElem();
 		});
