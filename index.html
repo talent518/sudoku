@@ -18,7 +18,7 @@
 		.bottom td {border-bottom:2px #333 solid;}
 		td.default {background:#ccc;}
 		td.default, td.value {cursor:default;}
-		td.setable {background:#f60;}
+		td.setable {background:#f60;color:#eee;}
 		
 		.select-box {margin-top:10px;display:none;}
 		.btns {margin-top:10px;text-align:center;}
@@ -146,7 +146,7 @@
 			<td class="right">9</td>
 		</tr>
 	</table>
-	<div class="btns"><button class="new-game">新迷题</button><button class="clean-block">清除</button><button class="begin-game">开始推导</button></div>
+	<div class="btns"><button class="new-game">新迷题</button><button class="clean-block">清除</button><button class="begin-game">开始猜迷</button><button class="hint-block">提示</button></div>
 	<script type="text/javascript">
 		var vals = [
 			[0,0,9, 0,0,2, 7,8,0],
@@ -169,8 +169,9 @@
 		
 		var ys, xs, gs;
 		var y, x;
-		var setableElems = $([]);
+		var setableElems = $([]), activeElem = $([]);
 		var nvals;
+		var ntip = 6;
 		
 		function initVars() {
 			ys = [[],[],[],[],[],[],[],[],[]];
@@ -198,6 +199,25 @@
 				}
 			}
 
+			tdElems.filter(':not(.default)').unbind('click').click(function() {
+				activeElem = $(this);
+				hint = 6;
+
+				tdElems.removeClass('setable');
+				$(this).addClass('setable');
+				$('.select-box, .clean-block').show();
+				
+				var $p = $(this).data('p');
+				selectTdElems.each(function() {
+					var $n = parseInt($(this).text());
+					
+					if(ys[$p.y].indexOf($n) != -1 || xs[$p.x].indexOf($n) != -1 || gs[Math.floor($p.y/3)][Math.floor($p.x/3)].indexOf($n) != -1) {
+						$(this).addClass('disabled');
+					} else {
+						$(this).removeClass('disabled');
+					}
+				});
+			});
 		}
 		
 		function makeSetableElem() {
@@ -228,24 +248,12 @@
 					}
 				}
 			}
-			
-			setableElems.click(function() {
-				var $p = $(this).data('p');
-				var $n = $(this).data('n');
-				
-				vals[$p.y][$p.x] = $n;
-				
-				ys[$p.y].push($n);
-				xs[$p.x].push($n);
-				gs[Math.floor($p.y/3)][Math.floor($p.x/3)].push($n);
-				
-				$(this).removeData('n').addClass('value').text($n);
-				
-				setableElems.removeClass('setable').unbind('click');
-				
-				setableElems = $([]);
-				makeSetableElem();
-			});
+
+			if(setableElems.size()) {
+				$('.hint-block').show();
+			} else {
+				$('.hint-block').hide();
+			}
 		}
 		
 		initElems();
@@ -253,6 +261,7 @@
 		
 		$('.new-game').click(function() {
 			$(this).hide();
+			$('.hint-block').hide();
 			$('.begin-game').show();
 			
 			setableElems = $([]);
@@ -265,6 +274,8 @@
 			}
 			
 			tdElems.text('').unbind('click').click(function() {
+				activeElem = $(this);
+
 				tdElems.removeClass('setable');
 				$(this).addClass('setable');
 				$('.select-box, .clean-block').show();
@@ -304,7 +315,7 @@
 			}
 			
 			var n = parseInt($(this).text());
-			var $p = tdElems.filter('.setable').text(n).data('p');
+			var $p = activeElem.text(n).data('p');
 			var $n = vals[$p.y][$p.x];
 			var i;
 			
@@ -328,9 +339,16 @@
 			initElems();
 			makeSetableElem();
 		});
+
+		$('.hint-block').click(function() {
+			ntip = 0;
+		});
 		
 		setInterval(function() {
-			setableElems.toggleClass('setable');
+			if(ntip<=5) {
+				ntip++;
+				setableElems.toggleClass('setable');
+			}
 		}, 500);
 	</script>
 </body>
